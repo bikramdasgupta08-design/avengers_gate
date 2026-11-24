@@ -37,24 +37,12 @@ PING = discord.AllowedMentions(users=True, roles=True, everyone=False)
 # --------------------------------------------------------------------------- #
 # Small helpers
 # --------------------------------------------------------------------------- #
-async def send_private(
-    interaction: discord.Interaction,
-    message: str,
-    *,
-    error: bool = False,
-) -> None:
-    """Reply only to the admin, always as an embed."""
-    embed = discord.Embed(
-        title="❌ Error" if error else "✅ Avengers Mate",
-        description=message,
-        color=discord.Color.red() if error else discord.Color.blurple(),
-    )
-    embed.set_footer(text="Avengers Mate")
-
+async def send_private(interaction: discord.Interaction, message: str) -> None:
+    """Reply only to the admin as plain text (ephemeral)."""
     if interaction.response.is_done():
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        await interaction.followup.send(message, ephemeral=True)
     else:
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(message, ephemeral=True)
 
 
 async def is_admin(interaction: discord.Interaction) -> bool:
@@ -120,11 +108,11 @@ async def on_command_error(interaction: discord.Interaction, error: app_commands
             )
         else:
             text = "You are not allowed to use this command."
-        await send_private(interaction, text, error=True)
+        await send_private(interaction, text)
         return
 
     print(f"Command error: {error}")
-    await send_private(interaction, "Something went wrong. Check the bot logs on Render.", error=True)
+    await send_private(interaction, "Something went wrong. Check the bot logs on Render.")
 
 
 # --------------------------------------------------------------------------- #
@@ -396,23 +384,16 @@ async def alert(
         )
     )
 
-    dm_embed = discord.Embed(
-        title=f"🏆 {tourney_name}",
-        description=message,
-        color=discord.Color.blurple(),
-    )
+    dm_lines = [f"🏆 **{tourney_name}**", message]
     if roles:
-        dm_embed.add_field(
-            name="Pinged role(s)",
-            value=", ".join(role.name for role in roles),
-            inline=False,
-        )
-    dm_embed.set_footer(text="Open the announcement to see the role ping.")
+        dm_lines.append("Pinged role(s): " + ", ".join(role.name for role in roles))
+    dm_lines.append("Open the announcement below to see the real role ping.")
+    dm_text = "\n\n".join(dm_lines)
 
     sent, failed = 0, 0
     for member in members:
         try:
-            await member.send(embed=dm_embed, view=view)
+            await member.send(dm_text, view=view)
             sent += 1
         except discord.Forbidden:
             failed += 1

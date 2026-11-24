@@ -102,7 +102,7 @@ Open the generated URL and invite it to the official server.
 
 ## Good to know
 
-- All confirmations, errors, and public announcements are sent as embeds. Role/user pings stay in the message text so Discord still delivers real notifications.
+- Server messages (rules, joins, resets, alerts, alarms) are embeds. Private replies and participant DMs are plain text. Role/user pings stay in message text so Discord still delivers real notifications.
 - Slash commands sync automatically to the official server on every start, so you don't need a separate deploy command.
 - State is intentionally in-memory: after a Render restart, `/trole` goes back to the default participants role, the ping channel is forgotten until you run `/tourney rules` again, and pending timers are cleared. Set them again after a restart.
 - On Render's free plan the service can sleep when idle. A keep-alive ping (e.g. UptimeRobot hitting your Render URL every few minutes) helps, but a paid plan is the only guarantee for alarms that must fire exactly on time.
