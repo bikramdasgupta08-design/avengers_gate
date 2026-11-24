@@ -37,12 +37,24 @@ PING = discord.AllowedMentions(users=True, roles=True, everyone=False)
 # --------------------------------------------------------------------------- #
 # Small helpers
 # --------------------------------------------------------------------------- #
-async def send_private(interaction: discord.Interaction, message: str) -> None:
-    """Reply only to the admin, whether or not we already deferred."""
+async def send_private(
+    interaction: discord.Interaction,
+    message: str,
+    *,
+    error: bool = False,
+) -> None:
+    """Reply only to the admin, always as an embed."""
+    embed = discord.Embed(
+        title="❌ Error" if error else "✅ Avengers Mate",
+        description=message,
+        color=discord.Color.red() if error else discord.Color.blurple(),
+    )
+    embed.set_footer(text="Avengers Mate")
+
     if interaction.response.is_done():
-        await interaction.followup.send(message, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
     else:
-        await interaction.response.send_message(message, ephemeral=True)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def is_admin(interaction: discord.Interaction) -> bool:
@@ -108,11 +120,11 @@ async def on_command_error(interaction: discord.Interaction, error: app_commands
             )
         else:
             text = "You are not allowed to use this command."
-        await send_private(interaction, text)
+        await send_private(interaction, text, error=True)
         return
 
     print(f"Command error: {error}")
-    await send_private(interaction, "Something went wrong. Check the bot logs on Render.")
+    await send_private(interaction, "Something went wrong. Check the bot logs on Render.", error=True)
 
 
 # --------------------------------------------------------------------------- #
@@ -228,8 +240,15 @@ async def tmembers(interaction: discord.Interaction, member: discord.Member) -> 
     channel = announcement_channel(interaction)
     if channel is not None:
         try:
+            join_embed = discord.Embed(
+                title="✅ Tournament Join",
+                description=f"{member.display_name} joined the tournament.",
+                color=discord.Color.green(),
+            )
+            join_embed.add_field(name="Role", value=role.name, inline=False)
             await channel.send(
-                f"✅ {member.mention} joined the tournament. {role.mention}",
+                f"{member.mention} {role.mention}",
+                embed=join_embed,
                 allowed_mentions=PING,
             )
         except discord.Forbidden:
@@ -275,7 +294,12 @@ async def treset(interaction: discord.Interaction) -> None:
     channel = announcement_channel(interaction)
     if channel is not None:
         try:
-            await channel.send(f"🔄 The tournament role {role.mention} has been reset.", allowed_mentions=PING)
+            reset_embed = discord.Embed(
+                title="🔄 Tournament Reset",
+                description=f"The role **{role.name}** has been removed from all members.",
+                color=discord.Color.orange(),
+            )
+            await channel.send(role.mention, embed=reset_embed, allowed_mentions=PING)
         except discord.Forbidden:
             pass
 
@@ -341,14 +365,24 @@ async def alert(
         await send_private(interaction, "No channel available. Run /tourney rules first.")
         return
 
-    role_pings = " ".join(role.mention for role in roles)
-    public_post = (
-        f"📢 **{tourney_name}**\n{message}\n"
-        f"{role_pings}\n" + " ".join(member.mention for member in members)
+    pings = " ".join(
+        [*(role.mention for role in roles), *(member.mention for member in members)]
     )
+    public_embed = discord.Embed(
+        title=f"📢 {tourney_name}",
+        description=message,
+        color=discord.Color.gold(),
+    )
+    if roles:
+        public_embed.add_field(
+            name="Pinged role(s)",
+            value=", ".join(role.name for role in roles),
+            inline=False,
+        )
+    public_embed.set_footer(text=f"Announcement by {interaction.user.display_name}")
 
     try:
-        announcement = await channel.send(public_post, allowed_mentions=PING)
+        announcement = await channel.send(pings, embed=public_embed, allowed_mentions=PING)
     except discord.Forbidden:
         await send_private(interaction, f"I can't post in {channel.mention}.")
         return
