@@ -201,7 +201,7 @@ class TourneyGroup(app_commands.Group):
 @app_commands.check(is_admin)
 async def trole(interaction: discord.Interaction, role: discord.Role) -> None:
     config.state["tourney_role_id"] = role.id
-    await send_private(interaction, f"Done. /tmembers will now give {role.mention}.")
+    await send_private(interaction, f"Done. /tmembers will now give **{role.name}**.")
 
 
 # --------------------------------------------------------------------------- #
@@ -289,7 +289,12 @@ async def treset(interaction: discord.Interaction) -> None:
                 description=f"The role **{role.name}** has been removed from all members.",
                 color=discord.Color.orange(),
             )
-            await channel.send(role.mention, embed=reset_embed, allowed_mentions=PING)
+            await channel.send(
+                embed=reset_embed,
+                allowed_mentions=discord.AllowedMentions(
+                    users=False, roles=False, everyone=False
+                ),
+            )
         except discord.Forbidden:
             pass
 
