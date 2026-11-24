@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: avengers-mate
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: GUILD_ID
+        value: "1557035700287836170"
+      - key: ADMIN_ROLE_ID
+        value: "1003156847475314750"
+      - key: PARTICIPANT_ROLE_ID
+        value: "1573531215129219182"
