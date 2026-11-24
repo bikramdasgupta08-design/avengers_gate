@@ -12,13 +12,18 @@ A simple tournament helper bot for one Discord server, built with Python + disco
 | `/tlist` | Post an embed listing everyone currently in the tournament, with counts and IDs. |
 | `/tremove` | Pick a member to remove from the list and take the tournament role off them. |
 | `/treset` | Remove the active tournament role from every member who has it (full tournament reset). |
-| `/alert` | Write a tournament name + message, pick up to 2 role mentions and up to 10 members. Everyone selected gets a DM containing the message and role mention text. Nothing is posted or pinged in the server. Run it again for the next batch of 10. |
+| `/alert` | Write a tournament name + message and pick up to 10 members. Each member gets a DM that pings them by username, shows the tournament name, then the message. Nothing is posted or pinged in the server. Run it again for the next batch of 10. |
 | `/timer` | Enter an IST date (`DD/MM/YYYY`) and time (`HH:MM`), plus who to ping. When it rings, the bot pings them in the ping channel. |
 | `/twhoami` | Diagnostic: shows the user ID, roles, Administrator permission, and the admin role the bot is checking. |
 
 Only inside the official server, and only for the admin role, people with Administrator permission, or the server owner.
 
-> **About DM pings:** Discord does not deliver real `@role` notifications inside DMs. `/alert` includes the role mention text in each DM, but it will not notify anyone and nothing is posted in the server. This is intentional per your setup.
+> **About DM pings:** `/alert` mentions each selected member by username inside their own DM. It posts nothing in the server and does not ping any role. DM format:
+> ```
+> @username
+> Tournament name: **<name>**
+> <message>
+> ```
 
 ## 1. Local setup (optional, for testing)
 

@@ -377,8 +377,6 @@ async def treset(interaction: discord.Interaction) -> None:
 @app_commands.describe(
     tourney_name="Tournament name",
     message="Tournament message for the DMs",
-    role1="Role mention to include in the DMs (no server ping)",
-    role2="Another role mention for the DMs (optional)",
     member1="Member 1",
     member2="Member 2",
     member3="Member 3",
@@ -395,8 +393,6 @@ async def alert(
     interaction: discord.Interaction,
     tourney_name: str,
     message: str,
-    role1: discord.Role = None,
-    role2: discord.Role = None,
     member1: discord.Member = None,
     member2: discord.Member = None,
     member3: discord.Member = None,
@@ -420,20 +416,18 @@ async def alert(
         await send_private(interaction, "Pick at least one member in the ping boxes.")
         return
 
-    roles = [role for role in (role1, role2) if role is not None]
-
-    dm_lines = [f"🏆 **{tourney_name}**", message]
-    if roles:
-        dm_lines.append("Ping: " + " ".join(role.mention for role in roles))
-    dm_text = "\n\n".join(dm_lines)
-
     sent, failed = 0, 0
     for member in members:
+        dm_text = (
+            f"{member.mention}\n"
+            f"Tournament name: **{tourney_name}**\n"
+            f"{message}"
+        )
         try:
             await member.send(
                 dm_text,
                 allowed_mentions=discord.AllowedMentions(
-                    roles=True, users=False, everyone=False
+                    users=True, roles=False, everyone=False
                 ),
             )
             sent += 1
