@@ -235,9 +235,11 @@ async def tmembers(interaction: discord.Interaction, member: discord.Member) -> 
             )
             join_embed.add_field(name="Role", value=role.name, inline=False)
             await channel.send(
-                f"{member.mention} {role.mention}",
+                member.mention,
                 embed=join_embed,
-                allowed_mentions=PING,
+                allowed_mentions=discord.AllowedMentions(
+                    users=True, roles=False, everyone=False
+                ),
             )
         except discord.Forbidden:
             pass
