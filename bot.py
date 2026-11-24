@@ -373,12 +373,12 @@ async def treset(interaction: discord.Interaction) -> None:
 # --------------------------------------------------------------------------- #
 # /alert
 # --------------------------------------------------------------------------- #
-@tree.command(name="alert", description="DM up to 10 members and ping the role", guild=GUILD)
+@tree.command(name="alert", description="DM up to 10 members with the tournament message", guild=GUILD)
 @app_commands.describe(
     tourney_name="Tournament name",
     message="Tournament message for the DMs",
-    role1="Role to ping publicly",
-    role2="Another role to ping publicly (optional)",
+    role1="Role mention to include in the DMs (no server ping)",
+    role2="Another role mention for the DMs (optional)",
     member1="Member 1",
     member2="Member 2",
     member3="Member 3",
@@ -421,52 +421,21 @@ async def alert(
         return
 
     roles = [role for role in (role1, role2) if role is not None]
-    channel = announcement_channel(interaction)
-    if channel is None:
-        await send_private(interaction, "No channel available. Run /tourney rules first.")
-        return
-
-    pings = " ".join(
-        [*(role.mention for role in roles), *(member.mention for member in members)]
-    )
-    public_embed = discord.Embed(
-        title=f"📢 {tourney_name}",
-        description=message,
-        color=discord.Color.gold(),
-    )
-    if roles:
-        public_embed.add_field(
-            name="Pinged role(s)",
-            value=", ".join(role.name for role in roles),
-            inline=False,
-        )
-    public_embed.set_footer(text=f"Announcement by {interaction.user.display_name}")
-
-    try:
-        announcement = await channel.send(pings, embed=public_embed, allowed_mentions=PING)
-    except discord.Forbidden:
-        await send_private(interaction, f"I can't post in {channel.mention}.")
-        return
-
-    view = discord.ui.View()
-    view.add_item(
-        discord.ui.Button(
-            label="View announcement",
-            style=discord.ButtonStyle.link,
-            url=announcement.jump_url,
-        )
-    )
 
     dm_lines = [f"🏆 **{tourney_name}**", message]
     if roles:
-        dm_lines.append("Pinged role(s): " + ", ".join(role.name for role in roles))
-    dm_lines.append("Open the announcement below to see the real role ping.")
+        dm_lines.append("Ping: " + " ".join(role.mention for role in roles))
     dm_text = "\n\n".join(dm_lines)
 
     sent, failed = 0, 0
     for member in members:
         try:
-            await member.send(dm_text, view=view)
+            await member.send(
+                dm_text,
+                allowed_mentions=discord.AllowedMentions(
+                    roles=True, users=False, everyone=False
+                ),
+            )
             sent += 1
         except discord.Forbidden:
             failed += 1
@@ -474,7 +443,7 @@ async def alert(
     await send_private(
         interaction,
         f"Alert sent: {sent} DM(s) delivered, {failed} failed "
-        f"(those members have DMs closed). Public ping: {announcement.jump_url}",
+        "(those members have DMs closed).",
     )
 
 
