@@ -30,4 +30,5 @@ state = {
     "tourney_role_id": PARTICIPANT_ROLE_ID,
     "announcement_channel_id": None,  # set automatically by /tourney rules
     "timers": [],                     # running asyncio tasks
+    "participants": set(),            # member IDs added through /tmembers
 }

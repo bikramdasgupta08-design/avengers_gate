@@ -225,6 +225,8 @@ async def tmembers(interaction: discord.Interaction, member: discord.Member) -> 
         )
         return
 
+    config.state["participants"].add(member.id)
+
     channel = announcement_channel(interaction)
     if channel is not None:
         try:
@@ -244,6 +246,71 @@ async def tmembers(interaction: discord.Interaction, member: discord.Member) -> 
             pass
 
     await send_private(interaction, f"{member.display_name} got {role.name}.")
+
+
+# --------------------------------------------------------------------------- #
+# /tlist
+# --------------------------------------------------------------------------- #
+@tree.command(name="tlist", description="Show everyone added to the tournament", guild=GUILD)
+@app_commands.check(is_admin)
+async def tlist(interaction: discord.Interaction) -> None:
+    participant_ids = sorted(config.state["participants"])
+    lines = []
+    for index, user_id in enumerate(participant_ids, 1):
+        member = interaction.guild.get_member(user_id)
+        name = member.display_name if member is not None else f"Unknown user ({user_id})"
+        lines.append(f"{index}. {name} — `{user_id}`")
+
+    description = "\n".join(lines) if lines else "No members have been added yet."
+    if len(description) > 4000:
+        description = description[:4000] + "\n… list truncated"
+
+    embed = discord.Embed(
+        title="📋 Tournament Participants",
+        description=description,
+        color=discord.Color.blurple(),
+    )
+    embed.set_footer(text=f"Total: {len(participant_ids)}")
+
+    channel = announcement_channel(interaction)
+    if channel is not None:
+        await channel.send(embed=embed, allowed_mentions=discord.AllowedMentions.none())
+    else:
+        await send_private(interaction, description)
+
+    await send_private(interaction, f"Participant list posted. Total: {len(participant_ids)}")
+
+
+# --------------------------------------------------------------------------- #
+# /tremove
+# --------------------------------------------------------------------------- #
+@tree.command(name="tremove", description="Remove a member from the tournament list and role", guild=GUILD)
+@app_commands.describe(member="Member to remove")
+@app_commands.check(is_admin)
+async def tremove(interaction: discord.Interaction, member: discord.Member) -> None:
+    role = interaction.guild.get_role(config.state["tourney_role_id"])
+    role_removed = False
+    if role is not None:
+        try:
+            await member.remove_roles(role, reason=f"Removed by {interaction.user}")
+            role_removed = True
+        except (discord.Forbidden, discord.HTTPException):
+            role_removed = False
+
+    config.state["participants"].discard(member.id)
+
+    embed = discord.Embed(
+        title="➖ Tournament Removal",
+        description=f"{member.display_name} was removed from the tournament.",
+        color=discord.Color.orange(),
+    )
+    embed.set_footer(text=f"Role removed: {'Yes' if role_removed else 'No'}")
+
+    channel = announcement_channel(interaction)
+    if channel is not None:
+        await channel.send(embed=embed, allowed_mentions=discord.AllowedMentions.none())
+
+    await send_private(interaction, f"Removed {member.display_name} from the tournament.")
 
 
 # --------------------------------------------------------------------------- #
@@ -507,6 +574,18 @@ async def on_ready() -> None:
     ):
         found = guild.get_role(role_id)
         print(f"{label} role {role_id}: {found.name if found else 'NOT FOUND IN THIS GUILD'}")
+
+    # Restore the participant list from members who already hold the tournament role.
+    # This preserves everyone you added before these commands existed.
+    tourney_role = guild.get_role(config.state["tourney_role_id"])
+    if tourney_role is not None:
+        try:
+            async for member in guild.fetch_members(limit=None):
+                if tourney_role.id in {role.id for role in member.roles}:
+                    config.state["participants"].add(member.id)
+            print(f"Participant list seeded from role: {len(config.state['participants'])}")
+        except Exception as exc:
+            print(f"Could not seed participant list: {exc}")
 
 
 # Tiny web server so Render sees an open port and keeps the bot online.

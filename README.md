@@ -9,6 +9,8 @@ A simple tournament helper bot for one Discord server, built with Python + disco
 | `/tourney rules` | Pick a channel, write up to 5 rules, and post a clean rules embed. That channel also becomes the bot's ping channel. |
 | `/trole` | Pick the role that `/tmembers` will assign. Defaults to Tournament Participants. |
 | `/tmembers` | Pick a member and instantly give them the active tournament role. |
+| `/tlist` | Post an embed listing everyone currently in the tournament, with counts and IDs. |
+| `/tremove` | Pick a member to remove from the list and take the tournament role off them. |
 | `/treset` | Remove the active tournament role from every member who has it (full tournament reset). |
 | `/alert` | Write a tournament name + message, pick up to 2 roles to ping and up to 10 members. Everyone selected gets a DM with a "View announcement" button, and a public message really pings the role(s). Run it again for the next batch of 10. |
 | `/timer` | Enter an IST date (`DD/MM/YYYY`) and time (`HH:MM`), plus who to ping. When it rings, the bot pings them in the ping channel. |
@@ -105,5 +107,6 @@ Open the generated URL and invite it to the official server.
 - Server messages (rules, joins, resets, alerts, alarms) are embeds. Private replies and participant DMs are plain text. Role/user pings stay in message text so Discord still delivers real notifications.
 - Slash commands sync automatically to the official server on every start, so you don't need a separate deploy command.
 - State is intentionally in-memory: after a Render restart, `/trole` goes back to the default participants role, the ping channel is forgotten until you run `/tourney rules` again, and pending timers are cleared. Set them again after a restart.
+- The participant list is also in-memory, but on startup the bot re-adds everyone who already holds the tournament role, so members you added earlier are preserved. `/treset` removes the role but intentionally keeps the stored list.
 - On Render's free plan the service can sleep when idle. A keep-alive ping (e.g. UptimeRobot hitting your Render URL every few minutes) helps, but a paid plan is the only guarantee for alarms that must fire exactly on time.
 - If a member's DMs are closed, `/alert` reports how many DMs failed — the public role ping still goes through.
